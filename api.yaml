@@ -1,0 +1,155 @@
+openapi: 3.0.3
+info:
+  title: GiftCard Endpoint Proposal
+  description: |-
+    This is a sample based on the OpenAPI 3.0 specification.
+  version: 1.0.0
+servers:
+  - url: http://alfred-base-url/v2/alfred/giftcard
+tags:
+  - name: GiftCard
+    description: Activate and Load GiftCard
+paths:
+  /activate:
+    post:
+      tags:
+        - GiftCard
+      summary: Activate Gift Card
+      description: This endpoint will be used by client, in order to activate a gift card by activation code
+      operationId: activateGiftCard
+      requestBody:
+        description: Card Activation
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivateRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivateResponse'
+      security:
+        - ApiKeyAuth: []
+  /topup:
+    post:
+      tags:
+        - GiftCard
+      summary: Topup Gift Card
+      description: Topup the GiftCard to QC Wallet
+      operationId: topupGiftCard
+      requestBody:
+        description: Topup Card
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopupRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopupResponse'
+      security:
+        - ApiKeyAuth: []
+components:
+  schemas:
+    BaseRequest:
+      type: object
+      description: Common fields in request objects
+      properties:
+        externalReferenceId:
+          type: string
+          description: unique identification for user
+        dateAtClient:
+          type: string
+          format: yyyy-MM-ddThh:mm:ssz
+          description: Timestamp of client application
+        provider:
+          type: string
+          description: giftcard provider
+          enum: ['qwikcilver']
+    ActivateRequest:
+      description: Request Payload for Activate Gift Card to be able to Topup
+      allOf:
+        - $ref: '#/components/schemas/BaseRequest'
+        - type: object
+          properties:
+            activationCode:
+              type: string
+              maximum: 256
+              description: The activation code is part of the URL used to retrieve EGV information.
+    TopupRequest:
+      description: Requet Payload for Topup the Gift Card
+      allOf:
+        - $ref: '#/components/schemas/BaseRequest'
+        - type: object
+          properties:
+            cardNumber:
+              type: string
+            cardPin:
+              type: string
+           
+    BaseResponse:
+      type: object
+      description: Alfred's Base Response object
+      required:
+        - apiVersion
+      properties:
+        apiVersion:
+          type: string
+          example: '2.0'
+        error:
+          type: object
+          description: this object won't be there if operation is successful
+          properties:
+            code:
+              type: number
+            error:
+              type: string
+            message:
+              type: string
+            field:
+              type: object
+        data:
+          type: object
+          description: this object won't be there if operation is failed
+    ActivateResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                cardNumber:
+                  type: string
+                pin:
+                  type: string
+                balance:
+                  type: number
+                currency:
+                  type: string
+                expiryDate:
+                  type: string
+                  format: yyyy-MM-ddThh:mm:ssz
+    TopupResponse:
+      allOf:
+        - $ref: '#/components/schemas/BaseResponse'
+        - type: object
+          properties:
+            balance:
+              type: number
+            currency:
+              type: string
+     
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Api-Key
+      description: Platform Api Key
